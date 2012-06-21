@@ -1,0 +1,227 @@
+<!DOCTYPE HTML>
+<html>
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+<title>ruecube</title>
+<script src="Three.js"></script>
+<script src="jquery.js"></script>
+
+<style type="text/css">
+body { background-color: #DDDDDD; font: 30px sans-serif; }
+canvas { position: absolute; top: 0; left: 0; }</style>
+<script>
+var ob;
+var camera, scene, renderer,
+    geometry, meterial, mesh=Array(),
+
+    shiftF = false,
+    rotateState = new THREE.Vector3(),
+    camerarotateState=new THREE.Vector3(),
+	KEY = {
+      RIGHT: 39,
+      UP: 38,
+      LEFT: 37,
+      DOWN: 40,
+      SHIFT: 16,
+      W: 87,
+	  A: 65,
+	  S: 83,
+	  D: 68
+	};
+	
+	
+var materials =[new THREE.MeshBasicMaterial({map: THREE.ImageUtils.loadTexture('./suzuki.png')}), // right
+                        new THREE.MeshBasicMaterial({map: THREE.ImageUtils.loadTexture('./dora.png')}), // left
+                        new THREE.MeshBasicMaterial({map: THREE.ImageUtils.loadTexture('./black.png')}), //top
+                        new THREE.MeshBasicMaterial({map: THREE.ImageUtils.loadTexture('./pink.png')}), // bottom
+                        new THREE.MeshBasicMaterial({map: THREE.ImageUtils.loadTexture('./orange.png')}), // front
+                        new THREE.MeshBasicMaterial({map: THREE.ImageUtils.loadTexture('./green.png')}) // back
+                ];
+
+
+function init(){
+	
+
+  scene = new THREE.Scene();
+
+  camera = new THREE.PerspectiveCamera(75, 1, 1, 10000);
+// camera.useQuaternion=true;
+  camera.position.z = 300;
+  scene.add(camera);
+  
+ 
+ /* geometry =  new THREE.CubeGeometry(200,200,200,1,1,1,materials)
+  material =  new THREE.MeshFaceMaterial(); */
+ for(i=0;27>i;i++){
+	  geometry =  new THREE.CubeGeometry(30,30,30,1,1,1,materials)
+  material =  new THREE.MeshFaceMaterial(); 
+  mesh[i] = new THREE.Mesh(geometry, material);
+  // クオータニオンを使うようにする
+  // mesh.rotation は無視されるようになる
+  mesh[i].useQuaternion = true;
+
+  scene.add(mesh[i])
+ 
+ }
+ 
+ // scene.add(mesh[0]);
+mesh[0].position.set(0,0,0);
+   mesh[1].position.set(0,30,0);
+    mesh[2].position.set(0,60,0);
+	 
+	 mesh[3].position.set(0,0,-30);
+	  mesh[4].position.set(0,30,-30);
+	   mesh[5].position.set(0,60,-30);
+	 
+	   mesh[6].position.set(0,0,-60);
+		mesh[7].position.set(0,30,-60);
+		 mesh[8].position.set(0,60,-60);
+	 
+		  mesh[9].position.set(-30,0,0);
+   		mesh[10].position.set(-30,30,0);
+   		 mesh[11].position.set(-30,60,0);
+	 	
+		mesh[12].position.set(-30,0,-30);
+	  mesh[13].position.set(-30,30,-30);
+	   mesh[14].position.set(-30,60,-30);
+	   
+	   mesh[15].position.set(-30,0,-60);
+		mesh[16].position.set(-30,30,-60);
+		 mesh[17].position.set(-30,60,-60);
+		
+		  mesh[18].position.set(-60,0,0);
+	   mesh[19].position.set(-60,30,0);
+    	mesh[20].position.set(-60,60,0);
+	
+	 mesh[21].position.set(-60,0,-30);
+	  mesh[22].position.set(-60,30,-30);
+	   mesh[23].position.set(-60,60,-30);
+	 
+	   mesh[24].position.set(-60,0,-60);
+		mesh[25].position.set(-60,30,-60);
+		 mesh[26].position.set(-60,60,-60);
+
+  renderer = new THREE.CanvasRenderer();
+  renderer.setSize(1000, 1000);
+
+  document.body.appendChild(renderer.domElement);
+  
+ trackball = new THREE.TrackballControls( camera, renderer.domElement );
+
+//  document.addEventListener('mousedown', clickHandler, false);
+  document.addEventListener('keydown', keydownHandler, false);
+//  document.addEventListener('keyup', keyupHandler, false);
+ // document.addEventListener('keydown', camerakeydownHandler, false);
+// 任意の要素のオフセットを取得用関数 (あとで canvas のオフセット位置取得用)  http://jsfiddle.net/yomotsu/MB6XU/ 参考url
+    var getElementPosition = function(element) {
+        var top = left = 0;
+        do {
+            top  += element.offsetTop  || 0;
+            left += element.offsetLeft || 0;
+            element =  element.offsetParent;
+        }
+        while (element);
+        return {top: top, left: left};
+    }
+
+
+//Ray 関連一式 たぶんこれ使いまわせば何でも行けると思う。 http://jsfiddle.net/yomotsu/MB6XU/ 参考url
+    var projector = new THREE.Projector();
+    renderer.domElement.addEventListener('click', function(e){
+        var mouseX = e.clientX - getElementPosition(renderer.domElement).left;
+        var mouseY = e.clientY - getElementPosition(renderer.domElement).top;
+        var x =   (mouseX / renderer.domElement.width) * 2 - 1;
+        var y = - (mouseY / renderer.domElement.height) * 2 + 1;
+        var vector = new THREE.Vector3(x, y, 1);
+        projector.unprojectVector(vector, camera);
+    
+        var ray = new THREE.Ray(camera.position, vector.subSelf(camera.position).normalize());
+        var intersects = ray.intersectObjects(mesh);
+    
+        if(intersects.length > 0){
+            console.log(intersects[ 0 ].object);
+           // var color = Math.random() * 0xffffff;
+           // intersects[ 0 ].object.material.color.setHex( color );
+    ob= intersects[ 0 ].object.id;// クリックしたオブジェクトのid取得
+	    }
+        renderer.render( scene, camera );
+    }, false);
+    
+
+
+  render();
+}
+
+// 描画する
+function render(){
+  document.getElementById('rotation').innerHTML = [
+
+
+    'ob: ' + ob
+	
+  ].join('<br />');
+trackball.update();
+  renderer.render(scene, camera);
+}
+
+function animate() {
+    requestAnimationFrame( animate );
+	render();
+}
+// mesh を回転させる
+
+function rotate(x, y, z){
+  var vec = new THREE.Vector3(x, y, z),
+      quat = new THREE.Quaternion().setFromEuler(vec);
+  for(i=0;9>i;i++)
+  mesh[i].quaternion.multiplySelf(quat);
+  rotateState.addSelf(vec);
+  render();
+}
+
+
+function clickHandler(e){
+  rotate(0, 0, shiftF ? 3 : -3);
+}
+
+function keydownHandler(e){
+  switch(e.keyCode){
+    case KEY.RIGHT: rotate(90, 0, 0); break;
+    case KEY.UP:    rotate(0, 90, 0); break;
+    case KEY.LEFT:  rotate(-90, 0, 0); break;
+    case KEY.DOWN:  rotate(0, -90, 0); break;
+    case KEY.SHIFT: shiftF = true; break;
+    default: break;
+  }
+}
+
+function camerakeydownHandler(e){
+  switch(e.keyCode){
+    case KEY.D: rotatecamera(90, 0, 0); break;
+    case KEY.W:    rotatecamera(0, 90, 0); break;
+    case KEY.A:  rotatecamera(-90, 0, 0); break;
+    case KEY.S:  rotatecamera(0, -90, 0); break;
+    case KEY.SHIFT: shiftF = true; break;
+    default: break;
+  }
+}
+
+function keyupHandler(e){
+  if(e.keyCode === KEY.SHIFT){
+    shiftF = false;
+  }
+}
+
+
+
+    
+    
+
+
+</script>
+
+</head>
+<body onload="init(),animate();">
+<div id="rotation"></div>
+</body>
+</html>
